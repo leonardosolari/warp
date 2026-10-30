@@ -1239,6 +1239,7 @@ impl ansi::Handler for GridHandler {
     }
 
     fn on_finish_byte_processing(&mut self, _: &ansi::ProcessorInput<'_>) {
+        self.mark_content_changed();
         // Make sure the max cursor and dirty cell range are up-to-date.
         self.grid.update_max_cursor();
         self.update_dirty_cells_range();

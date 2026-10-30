@@ -1183,6 +1183,13 @@ impl Block {
         self.header_grid.honor_ps1()
     }
 
+    pub fn prompt_highlight_end(&self) -> Option<Point> {
+        match self.header_grid.prompt_end_point()? {
+            PromptEndPoint::PromptEnd { point, .. } => Some(point),
+            PromptEndPoint::EmptyPrompt | PromptEndPoint::Stale => None,
+        }
+    }
+
     pub fn set_honor_ps1(&mut self, honor_ps1: bool) {
         self.header_grid.set_honor_ps1(honor_ps1);
     }

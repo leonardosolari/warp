@@ -2962,6 +2962,10 @@ impl Workspace {
                 });
             }
         });
+        ctx.subscribe_to_model(
+            &crate::terminal::highlight::settings::HighlightSettings::handle(ctx),
+            |_, _, _, ctx| ctx.notify(),
+        );
 
         ctx.subscribe_to_model(&referral_theme_status, |me, _, event, ctx| {
             me.handle_referral_theme_status_event(event, ctx);
@@ -23821,6 +23825,15 @@ impl Workspace {
 
         if should_use_ligature_rendering(app) {
             context.set.insert(flags::LIGATURE_RENDERING_CONTEXT_FLAG);
+        }
+        if FeatureFlag::TerminalHighlighting.is_enabled() {
+            let settings = crate::terminal::highlight::settings::HighlightSettings::as_ref(app);
+            if *settings.enabled {
+                context.set.insert(flags::TEXT_HIGHLIGHTING_CONTEXT_FLAG);
+            }
+            if settings.prompt_header.enabled {
+                context.set.insert(flags::PROMPT_HEADER_COLORS_CONTEXT_FLAG);
+            }
         }
     }
 

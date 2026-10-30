@@ -401,6 +401,8 @@ fn enabled_features() -> HashSet<FeatureFlag> {
         FeatureFlag::PluggableNotifications,
         #[cfg(feature = "async_find")]
         FeatureFlag::AsyncFind,
+        #[cfg(feature = "terminal_highlighting")]
+        FeatureFlag::TerminalHighlighting,
         #[cfg(feature = "list_skills")]
         FeatureFlag::ListSkills,
         #[cfg(feature = "ask_user_question")]

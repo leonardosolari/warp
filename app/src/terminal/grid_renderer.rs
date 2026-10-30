@@ -35,6 +35,7 @@ use super::model::image_map::{ImagePlacementData, StoredImageMetadata};
 use super::model::terminal_model::RangeInModel;
 use crate::settings::EnforceMinimumContrast;
 use crate::terminal::grid_size_util::calculate_grid_baseline_position;
+use crate::terminal::highlight::{GridHighlights, HighlightRuntime};
 use crate::terminal::model::ansi::{Color, CursorShape, CursorStyle};
 use crate::terminal::model::cell::{Cell, Flags};
 use crate::terminal::model::grid::Dimensions;
@@ -321,6 +322,14 @@ pub fn render_grid<'a>(
     // codepath (which is known to be less performant) if the font does not
     // even support ligatures.
     let respect_displayed_output = matches!(respect_displayed_output, RespectDisplayedOutput::Yes);
+    let highlights = if FeatureFlag::TerminalHighlighting.is_enabled() {
+        HighlightRuntime::as_ref(app).for_grid(grid, colors, theme)
+    } else {
+        GridHighlights::default()
+    };
+    if highlights.pending {
+        ctx.repaint_after(std::time::Duration::from_millis(16));
+    }
     match (use_ligature_rendering, grid.displayed_output_rows()) {
         (true, Some(rows)) if respect_displayed_output => {
             let visible_rows = rows.skip(start_row).take(end_row.saturating_sub(start_row));
@@ -352,6 +361,7 @@ pub fn render_grid<'a>(
                 image_metadata,
                 bg_color_sampler,
                 hide_cursor_cell,
+                &highlights,
                 ctx,
                 app,
             );
@@ -385,6 +395,7 @@ pub fn render_grid<'a>(
                 image_metadata,
                 bg_color_sampler,
                 hide_cursor_cell,
+                &highlights,
                 ctx,
                 app,
             );
@@ -420,6 +431,7 @@ pub fn render_grid<'a>(
                 image_metadata,
                 bg_color_sampler,
                 hide_cursor_cell,
+                &highlights,
                 ctx,
                 app,
             );
@@ -454,6 +466,7 @@ pub fn render_grid<'a>(
                 image_metadata,
                 bg_color_sampler,
                 hide_cursor_cell,
+                &highlights,
                 ctx,
                 app,
             );
@@ -492,6 +505,7 @@ fn render_grid_without_ligatures<'a>(
     image_metadata: &HashMap<u32, StoredImageMetadata>,
     mut bg_color_sampler: Option<&mut ColorSampler>,
     hide_cursor_cell: bool,
+    highlights: &GridHighlights,
     ctx: &mut PaintContext,
     app: &AppContext,
 ) {
@@ -713,7 +727,10 @@ fn render_grid_without_ligatures<'a>(
             }
             // Check if the current block match contains the point.
             let cell = &row[col];
-            let mut cell_type = CellType::default();
+            let mut cell_type = CellType {
+                highlight: highlights.style_at(Point::new(row_idx, col), grid.columns()),
+                ..Default::default()
+            };
             let mut first_cell_in_link = false;
             let mut first_cell_in_secret = FirstCellInSecret::No;
 
@@ -755,12 +772,13 @@ fn render_grid_without_ligatures<'a>(
             if cell.flags().intersects(Flags::WIDE_CHAR_SPACER)
                 && !cell_type.is_find_match()
                 && !cell_type.is_filter_match()
+                && cell_type.highlight.is_none()
             {
                 continue;
             }
 
             // Cell is empty, we should flush the background if there's any and continue
-            if cell.is_empty() {
+            if cell.is_empty() && cell_type.highlight.is_none() {
                 if let Some(sampler) = bg_color_sampler.as_deref_mut() {
                     sampler.sample(
                         cached_background_color
@@ -878,6 +896,26 @@ fn render_grid_without_ligatures<'a>(
     // and cell decorations to ensure that they sit on top of the merged background
     // rects.  (This is not needed for glyphs, as the rendering stack currently always
     // renders glyphs above rects within a given layer.)
+    for (row, color) in &highlights.separators {
+        if used_displayed_output_rows && !grid.is_displayed_row(*row) {
+            continue;
+        }
+        let displayed_row = if used_displayed_output_rows {
+            grid.maybe_translate_point_from_original_to_displayed(Point::new(*row, 0))
+                .row
+        } else {
+            *row
+        };
+        if displayed_row >= start_row && displayed_row < end_row {
+            ctx.scene
+                .draw_rect_without_hit_recording(RectF::new(
+                    grid_origin + vec2f(0., displayed_row as f32 * cell_size.y()),
+                    vec2f(grid.columns() as f32 * cell_size.x(), 1.),
+                ))
+                .with_background(Fill::Solid(*color));
+        }
+    }
+
     for native_glyph in native_glyphs_to_render {
         render_native_glyph(native_glyph, ctx, app);
     }
@@ -1005,6 +1043,7 @@ fn render_grid_with_ligatures<'a>(
     image_metadata: &HashMap<u32, StoredImageMetadata>,
     mut bg_color_sampler: Option<&mut ColorSampler>,
     hide_cursor_cell: bool,
+    highlights: &GridHighlights,
     ctx: &mut PaintContext,
     app: &AppContext,
 ) {
@@ -1162,7 +1201,11 @@ fn render_grid_with_ligatures<'a>(
             Some((cell_index, _)) => cell_index,
             None => {
                 // If there are no non-empty cells in the entire row, we can skip it entirely
-                if marked_text.peek().is_none() {
+                if marked_text.peek().is_none()
+                    && highlights
+                        .style_at(Point::new(row_idx, 0), grid.columns())
+                        .is_none()
+                {
                     if let Some(sampler) = bg_color_sampler.as_deref_mut() {
                         // Empty ligature-rendered rows still represent the terminal's default
                         // background. Keep them in the sampler so transient colored rows, such as
@@ -1180,7 +1223,10 @@ fn render_grid_with_ligatures<'a>(
 
         for col in 0..grid.columns() {
             let cell = &row[col];
-            let mut cell_type = CellType::default();
+            let mut cell_type = CellType {
+                highlight: highlights.style_at(Point::new(row_idx, col), grid.columns()),
+                ..Default::default()
+            };
             let mut first_cell_in_link = false;
             let mut first_cell_in_secret = FirstCellInSecret::No;
 
@@ -1301,11 +1347,12 @@ fn render_grid_with_ligatures<'a>(
             if cell.flags().intersects(Flags::WIDE_CHAR_SPACER)
                 && !cell_type.is_find_match()
                 && !cell_type.is_filter_match()
+                && cell_type.highlight.is_none()
             {
                 continue;
             }
 
-            if cell.is_empty() {
+            if cell.is_empty() && cell_type.highlight.is_none() {
                 if let Some(sampler) = bg_color_sampler.as_deref_mut() {
                     // If the cell is empty, that means the bg is is `NamedBackground.`
                     //
@@ -1509,6 +1556,26 @@ fn render_grid_with_ligatures<'a>(
         );
     }
 
+    for (row, color) in &highlights.separators {
+        if used_displayed_output_rows && !grid.is_displayed_row(*row) {
+            continue;
+        }
+        let displayed_row = if used_displayed_output_rows {
+            grid.maybe_translate_point_from_original_to_displayed(Point::new(*row, 0))
+                .row
+        } else {
+            *row
+        };
+        if displayed_row >= start_row && displayed_row < end_row {
+            ctx.scene
+                .draw_rect_without_hit_recording(RectF::new(
+                    grid_origin + vec2f(0., displayed_row as f32 * cell_size.y()),
+                    vec2f(grid.columns() as f32 * cell_size.x(), 1.),
+                ))
+                .with_background(Fill::Solid(*color));
+        }
+    }
+
     for native_glyph in native_glyphs_to_render {
         render_native_glyph(native_glyph, ctx, app);
     }
@@ -1650,6 +1717,21 @@ fn cell_colors(
 
     if cell.flags.contains(Flags::INVERSE) {
         mem::swap(&mut foreground_color, &mut background_color);
+    }
+
+    if !cell_type.is_find_match()
+        && !cell_type.is_filter_match()
+        && !cell_type.is_url()
+        && !cell_type.is_secret()
+        && !cell_type.is_marked_text_char()
+        && let Some(style) = cell_type.highlight
+    {
+        if let Some(color) = style.foreground {
+            foreground_color = color;
+        }
+        if let Some(color) = style.background {
+            background_color = color;
+        }
     }
 
     foreground_color.a = alpha;

@@ -55,6 +55,7 @@ impl GridHandler {
     }
 
     pub(super) fn resize_storage(&mut self, num_rows: usize, num_cols: usize) {
+        self.mark_content_changed();
         use std::cmp::min;
 
         // If this is the alt screen, we can skip reflowing the grid and simply

@@ -9,6 +9,73 @@ use crate::terminal::model::index::Point;
 use crate::terminal::model::selection::SelectionPoint;
 use crate::terminal::{SizeInfo, grid_renderer};
 
+fn highlighted_cell_colors(cell: &super::Cell, cell_type: &super::CellType) -> super::CellColors {
+    let colors = crate::terminal::color::List::from(
+        &crate::terminal::color::Colors::with_foreground_background_color(
+            super::ColorU::white(),
+            super::ColorU::black(),
+        ),
+    );
+    super::cell_colors(
+        cell,
+        &colors,
+        &crate::terminal::color::OverrideList::empty(),
+        cell_type,
+        255,
+        crate::settings::EnforceMinimumContrast::Never,
+        &mut super::MinimalContrastCache::new(),
+        None,
+        crate::terminal::model::ObfuscateSecrets::No,
+    )
+}
+
+#[test]
+fn highlight_background_is_opaque_on_default_empty_cells() {
+    let background = super::ColorU::new(16, 32, 48, 255);
+    let cell_type = super::CellType {
+        highlight: Some(crate::terminal::highlight::ResolvedHighlightStyle {
+            foreground: None,
+            background: Some(background),
+        }),
+        ..Default::default()
+    };
+    let colors = highlighted_cell_colors(&super::Cell::default(), &cell_type);
+    assert_eq!(colors.background_color, background);
+    assert_eq!(colors.foreground_color, super::ColorU::white());
+}
+
+#[test]
+fn trigger_foreground_applies_after_ansi_inverse() {
+    let foreground = super::ColorU::new(255, 0, 0, 255);
+    let cell_type = super::CellType {
+        highlight: Some(crate::terminal::highlight::ResolvedHighlightStyle {
+            foreground: Some(foreground),
+            background: None,
+        }),
+        ..Default::default()
+    };
+    let mut cell = super::Cell::default();
+    cell.flags.insert(super::Flags::INVERSE);
+    let colors = highlighted_cell_colors(&cell, &cell_type);
+    assert_eq!(colors.foreground_color, foreground);
+    assert_eq!(colors.background_color, super::ColorU::white());
+}
+
+#[test]
+fn find_style_takes_precedence_over_triggers() {
+    let cell_type = super::CellType {
+        is_find_match: Some(super::IsFocused::Yes),
+        highlight: Some(crate::terminal::highlight::ResolvedHighlightStyle {
+            foreground: Some(super::ColorU::white()),
+            background: Some(super::ColorU::black()),
+        }),
+        ..Default::default()
+    };
+    let colors = highlighted_cell_colors(&super::Cell::default(), &cell_type);
+    assert_eq!(colors.background_color, *super::FOCUSED_MATCH_COLOR);
+    assert_eq!(colors.foreground_color, super::ColorU::black());
+}
+
 fn rect_from_points(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> RectF {
     RectF::from_points(vec2f(min_x, min_y), vec2f(max_x, max_y))
 }

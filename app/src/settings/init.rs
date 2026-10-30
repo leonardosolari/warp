@@ -66,6 +66,10 @@ pub fn register_all_settings(ctx: &mut AppContext) {
     WindowSettings::register(ctx);
     SafeModeSettings::register(ctx);
     TerminalSettings::register(ctx);
+    crate::terminal::highlight::settings::HighlightSettings::register(ctx);
+    if FeatureFlag::TerminalHighlighting.is_enabled() {
+        ctx.add_singleton_model(crate::terminal::highlight::HighlightRuntime::new);
+    }
     PaneSettings::register(ctx);
     CommandSearchSettings::register(ctx);
     AliasExpansionSettings::register(ctx);

@@ -14,6 +14,7 @@ pub mod completions;
 pub mod escape_sequences;
 pub mod find;
 pub mod grid;
+pub mod highlight;
 pub mod image_map;
 mod indexing;
 pub mod index {

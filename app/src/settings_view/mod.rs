@@ -97,6 +97,7 @@ mod execution_profile_view;
 mod features;
 mod features_page;
 pub(crate) mod handoff_environment_creation_modal;
+mod highlighting;
 mod join_teams_modal;
 pub mod keybindings;
 mod knowledge_page;
@@ -635,6 +636,8 @@ pub mod flags {
     pub const IS_CODEBASE_INDEXING_ENABLED: &str = "IsCodebaseIndexingEnabled";
     pub const IS_AUTOINDEXING_ENABLED: &str = "IsAutoIndexingEnabled";
     pub const LIGATURE_RENDERING_CONTEXT_FLAG: &str = "Ligature_Rendering_Enabled";
+    pub const TEXT_HIGHLIGHTING_CONTEXT_FLAG: &str = "Text_Highlighting_Enabled";
+    pub const PROMPT_HEADER_COLORS_CONTEXT_FLAG: &str = "Prompt_Header_Colors_Enabled";
     pub const HAS_SETTINGS_TO_IMPORT_FLAG: &str = "HasSettingsToImport";
     /// The user's setting enabled UDI, but we may show a classic input (e.g. ssh/subshell warpification)
     pub const UNIVERSAL_DEVELOPER_INPUT_ENABLED: &str = "UniversalDeveloperInputEnabled";

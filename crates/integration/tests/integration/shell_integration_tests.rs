@@ -10,6 +10,10 @@
 use super::integration_tests;
 
 integration_tests! {
+    // Verify highlighting through a real shell and prompt decoration in an unintegrated child shell.
+    test_terminal_highlighting_in_integrated_session,
+    test_prompt_headers_without_shell_integration,
+    test_prompt_headers_with_classic_ps1,
     // Test command execution works.
     test_single_command,
     // Test shell process terminates when session is closed.

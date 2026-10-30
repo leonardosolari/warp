@@ -81,6 +81,7 @@ use crate::terminal::model::blocks::{
 use crate::terminal::model::escape_sequences::{
     KeystrokeWithDetails, ToEscapeSequence, maybe_kitty_keyboard_escape_sequence,
 };
+use crate::terminal::model::grid::Dimensions as _;
 use crate::terminal::model::index::Point as IndexPoint;
 use crate::terminal::model::selection::{SelectAction, SelectionPoint};
 use crate::terminal::model::terminal_model::BlockIndex;
@@ -3724,6 +3725,49 @@ impl Element for BlockListElement {
 
         self.line_height = Some(self.size_info.cell_height_px());
         self.scroll_top = Some(viewport.scroll_top_in_lines());
+        if FeatureFlag::TerminalHighlighting.is_enabled() {
+            let highlights = crate::terminal::highlight::HighlightRuntime::as_ref(app);
+            let viewport_rows = self.size_info.rows().saturating_add(4);
+            if let Some(items) = &self.visible_items {
+                for item in items.iter() {
+                    if let VisibleItem::Block { block_index, .. } = item
+                        && let Some(block) = model.block_list().block_at(*block_index)
+                    {
+                        let grid = block.output_grid().grid_handler();
+                        let original_start = viewport
+                            .get_first_visible_output_row(*block_index)
+                            .unwrap_or(0);
+                        let start = grid
+                            .maybe_translate_point_from_original_to_displayed(IndexPoint::new(
+                                original_start,
+                                0,
+                            ))
+                            .row;
+                        highlights.prepare_grid(grid, start..start.saturating_add(viewport_rows));
+                        if block.honor_ps1()
+                            && let Some(end) = block.prompt_highlight_end()
+                        {
+                            highlights.prepare_prompt_grid(
+                                block.prompt_and_command_grid().grid_handler(),
+                                end,
+                                block.prompt_and_command_grid().len(),
+                            );
+                            let right = block.rprompt_grid();
+                            if !right.is_empty() {
+                                highlights.prepare_prompt_grid(
+                                    right.grid_handler(),
+                                    IndexPoint::new(
+                                        right.len() - 1,
+                                        right.grid_handler().columns().saturating_sub(1),
+                                    ),
+                                    right.len(),
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fn paint(&mut self, origin: Vector2F, ctx: &mut PaintContext, app: &AppContext) {

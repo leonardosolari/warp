@@ -407,6 +407,11 @@ fn register_tests() -> HashMap<&'static str, BoxedBuilderFn> {
     register_test!(test_create_team_workflow_pane_from_command_palette);
 
     register_test!(test_block_filtering_keybinding);
+    register_test!(test_terminal_highlighting_in_integrated_session);
+    register_test!(test_prompt_headers_without_shell_integration);
+    register_test!(test_terminal_highlighting_settings_preview);
+    register_test!(test_terminal_highlighting_rule_editor_saves_valid_drafts);
+    register_test!(test_prompt_headers_with_classic_ps1);
     register_test!(test_block_filtering_keybinding_with_long_running_command);
     register_test!(test_block_filtering_toolbelt_icon);
     register_test!(test_block_filtering_context_menu);

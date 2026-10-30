@@ -1,0 +1,76 @@
+{
+  "archive_sha256": "03c827c3467518de45542acba8caae63d951aede4b479962bf065b4df0d8a845",
+  "executable_sha256": "e9a66144b3a1c4d32f8062b1eb34e26e9ed5298106abf1982b4654ab107f13a5",
+  "reference": "Custom: OK/warning/error keywords",
+  "rea_archive_evidence": "ev_c93be5ed35032e900e12391777946cb6021b5d9497f04e3be9d78fbaa61fcc71",
+  "rea_pe_evidence": "ev_df1fa10fba5eb3dba5af94cd6107a4846e942560403c1efeca52e3dd124eb7c3",
+  "method": "REA inventory plus independent Python decoding of Delphi strings/DFM and LLVM static instructions; no Windows execution",
+  "syntax_form_resource_index": 190,
+  "load_function_va": "0x8b5938",
+  "rules": [
+    {
+      "key": "underline_urls",
+      "file_offset": "0x4b5040",
+      "virtual_address": "0x8b5c40",
+      "length_bytes": 96,
+      "form_field_offset": "0x358",
+      "caption": "Underline",
+      "dfm_font_color": "clWhite",
+      "pattern": "[^A-Za-z_&-](http(s)?://[A-Za-z0-9_.&?=%~#{}()@+-]+:?[A-Za-z0-9_./&?=%~#{}()@+-]+)[^A-Za-z0-9_-]"
+    },
+    {
+      "key": "errors",
+      "file_offset": "0x4b50ac",
+      "virtual_address": "0x8b5cac",
+      "length_bytes": 705,
+      "form_field_offset": "0x35c",
+      "caption": "Red",
+      "dfm_font_color": "clRed",
+      "pattern": "([^A-Za-z_&-]((bad|wrong|incorrect|improper|invalid|unsupported|bad)( file| memory)? (descriptor|alloc(ation)?|addr(ess)?|owner(ship)?|arg(ument)?|param(eter)?|setting|length|filename)|not properly|improperly|(operation |connection |authentication |access |permission )?(denied|disallowed|not allowed|refused|problem|failed|failure|not permitted)|no [A-Za-z]+( [A-Za-z]+)? found|invalid|unsupported|not supported|seg(mentation )?fault|corruption|corrupted|corrupt|overflow|underrun|not ok|unimplemented|unsuccessfull|not implemented|permerrors?|fehlers?|errore|errors?|erreurs?|fejl|virhe|greška|erro|crash|crashed|core dump|fel|\\(ee\\)|\\(ni\\))[^A-Za-z_-]|[=>\"':.,;({\\[][ ]*(false|no|ko)[ ]*[]=>\"':.,;)} ])"
+    },
+    {
+      "key": "success",
+      "file_offset": "0x4b5378",
+      "virtual_address": "0x8b5f78",
+      "length_bytes": 204,
+      "form_field_offset": "0x360",
+      "caption": "Green",
+      "dfm_font_color": "clLime",
+      "pattern": "([^A-Za-z_&-](accepted|allowed|enabled|connected|erfolgreich|exitoso|successo|sucedido|framgångsrik|successfully|successful|succeeded|success)[^A-Za-z_-]|[=>\"':.,;({\\[][ ]*(true|yes|ok)[ ]*[]=>\"':.,;)} ])"
+    },
+    {
+      "key": "warnings",
+      "file_offset": "0x4b5450",
+      "virtual_address": "0x8b6050",
+      "length_bytes": 556,
+      "form_field_offset": "0x364",
+      "caption": "Yellow",
+      "dfm_font_color": "clYellow",
+      "pattern": "[^A-Za-z_&-](\\[\\-w[A-Za-z-]+\\]|caught signal [0-9]+|cannot|(connection (to (remote host|[a-z0-9.]+) )?)?(closed|terminated|stopped|not responding)|exited|no more [A-Za-z] available|unexpected|(command |binary |file )?not found|ooo?o?o?ps|out of (space|memory)|low (memory|disk)|unknown|disabled|disconnected|deprecated|refused|disconnect(ion)?|advertencia|avvertimento|attention|warnings?|achtung|exclamation|alerts?|warnungs?|advarsel|pedwarn|aviso|varoitus|upozorenje|peringatan|uyari|varning|avertissement|\\(ww\\)|\\(\\?\\?\\)|could not|unable to)[^A-Za-z_-]"
+    },
+    {
+      "key": "hosts",
+      "file_offset": "0x4b5688",
+      "virtual_address": "0x8b6288",
+      "length_bytes": 125,
+      "form_field_offset": "0x36c",
+      "caption": "Magenta",
+      "dfm_font_color": "clFuchsia",
+      "pattern": "[^0-9A-Za-z_&-](localhost|([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])\\.[0-9]+\\.[0-9]+\\.[0-9]+|null|none)[^0-9A-Za-z_-]"
+    },
+    {
+      "key": "information",
+      "file_offset": "0x4b5710",
+      "virtual_address": "0x8b6310",
+      "length_bytes": 251,
+      "form_field_offset": "0x370",
+      "caption": "Cyan",
+      "dfm_font_color": "clAqua",
+      "pattern": "[^A-Za-z_&-](last (failed )?login:|launching|checking|loading|creating|building|important|booting|starting|notice|informational|informationen|informazioni|informação|oplysninger|informations?|info|información|informasi|note|\\(ii\\)|\\(\\!\\!\\))[^A-Za-z_-]"
+    }
+  ],
+  "empty_slots": [
+    "Blue (sEdit5 / 0x368)",
+    "Blinking (sEdit8 / 0x374)"
+  ]
+}

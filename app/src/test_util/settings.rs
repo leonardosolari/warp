@@ -89,6 +89,10 @@ pub fn initialize_settings_for_tests_with_mode(
     InputSettings::register(app);
     KeysSettings::register(app);
     LigatureSettings::register(app);
+    crate::terminal::highlight::settings::HighlightSettings::register(app);
+    if crate::features::FeatureFlag::TerminalHighlighting.is_enabled() {
+        app.add_singleton_model(crate::terminal::highlight::HighlightRuntime::new);
+    }
     if warp_core::features::FeatureFlag::WarpControlCli.is_enabled() {
         LocalControlSettings::register(app);
     }

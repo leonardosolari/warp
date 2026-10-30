@@ -1,0 +1,50 @@
+# Adapted from the standard keyword preset embedded in MobaXterm 26.6.
+# Merge into settings.toml; do not replace unrelated settings.
+# RGB values follow the syntax-editor swatches; terminal-theme identity is not verified.
+[terminal.highlights]
+enabled = true
+
+[[terminal.highlights.rules]]
+id = "a50e349e-f80e-511b-a2a7-67b7d7b6f544"
+name = "MobaXterm · Errors"
+enabled = true
+pattern = '''\b(?:(bad|wrong|incorrect|improper|invalid|unsupported|bad)( file| memory)? (descriptor|alloc(ation)?|addr(ess)?|owner(ship)?|arg(ument)?|param(eter)?|setting|length|filename)|not properly|improperly|(operation |connection |authentication |access |permission )?(denied|disallowed|not allowed|refused|problem|failed|failure|not permitted)|no [A-Za-z]+( [A-Za-z]+)? found|invalid|unsupported|not supported|seg(mentation )?fault|corruption|corrupted|corrupt|overflow|underrun|not ok|unimplemented|unsuccessfull|not implemented|permerrors?|fehlers?|errore|errors?|erreurs?|fejl|virhe|greška|erro|crash|crashed|core dump|fel|false|no|ko)\b|\(ee\)|\(ni\)'''
+case_sensitive = false
+target = "text"
+foreground = "#FF0000"
+
+[[terminal.highlights.rules]]
+id = "61a61b1b-95b7-565a-a769-a55a4478ab1b"
+name = "MobaXterm · Warnings"
+enabled = true
+pattern = '''\b(?:caught signal [0-9]+|cannot|(connection (to (remote host|[a-z0-9.]+) )?)?(closed|terminated|stopped|not responding)|exited|no more [A-Za-z] available|unexpected|(command |binary |file )?not found|ooo?o?o?ps|out of (space|memory)|low (memory|disk)|unknown|disabled|disconnected|deprecated|refused|disconnect(ion)?|advertencia|avvertimento|attention|warnings?|achtung|exclamation|alerts?|warnungs?|advarsel|pedwarn|aviso|varoitus|upozorenje|peringatan|uyari|varning|avertissement|could not|unable to)\b|\[\-w[A-Za-z-]+\]|\(ww\)|\(\?\?\)'''
+case_sensitive = false
+target = "text"
+foreground = "#FFFF00"
+
+[[terminal.highlights.rules]]
+id = "89219b88-f14a-5a64-984c-8d3c5cd44114"
+name = "MobaXterm · Success"
+enabled = true
+pattern = '''\b(?:accepted|allowed|enabled|connected|erfolgreich|exitoso|successo|sucedido|framgångsrik|successfully|successful|succeeded|success|true|yes|ok)\b'''
+case_sensitive = false
+target = "text"
+foreground = "#00FF00"
+
+[[terminal.highlights.rules]]
+id = "143c8009-7f44-5ed0-8709-a8967e5cfb42"
+name = "MobaXterm · Hosts and null values"
+enabled = true
+pattern = '''\b(?:localhost|([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])\.[0-9]+\.[0-9]+\.[0-9]+|null|none)\b'''
+case_sensitive = false
+target = "text"
+foreground = "#FF00FF"
+
+[[terminal.highlights.rules]]
+id = "ffdee0da-1ec0-5cc3-98aa-ca342761f821"
+name = "MobaXterm · Information"
+enabled = true
+pattern = '''\b(?:launching|checking|loading|creating|building|important|booting|starting|notice|informational|informationen|informazioni|informação|oplysninger|informations?|info|información|informasi|note)\b|\b(?:last (failed )?login:)|\(ii\)|\(\!\!\)'''
+case_sensitive = false
+target = "text"
+foreground = "#00FFFF"

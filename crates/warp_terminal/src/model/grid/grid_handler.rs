@@ -18,6 +18,7 @@ use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::num::NonZeroUsize;
 use std::ops::{Range, RangeInclusive};
+use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
 
 use bounded_vec_deque::BoundedVecDeque;
 use filtering::FilterState;
@@ -414,6 +415,8 @@ pub(crate) enum FullGridClearBehavior {
 /// An implementation of `ansi::Handler` that writes to a `Grid`.
 #[derive(Clone)]
 pub struct GridHandler {
+    content_revision: u64,
+    content_identity: u64,
     grid: GridStorage,
 
     pub flat_storage: FlatStorage,
@@ -473,7 +476,24 @@ pub struct GridHandler {
     find_dirty_rows_range: Option<RangeInclusive<usize>>,
 }
 
+fn next_content_revision() -> u64 {
+    static REVISION: AtomicU64 = AtomicU64::new(1);
+    REVISION.fetch_add(1, AtomicOrdering::Relaxed)
+}
+
 impl GridHandler {
+    pub fn content_revision(&self) -> u64 {
+        self.content_revision
+    }
+
+    pub fn content_identity(&self) -> u64 {
+        self.content_identity
+    }
+
+    pub(super) fn mark_content_changed(&mut self) {
+        self.content_revision = next_content_revision();
+    }
+
     pub fn new(
         size_info: SizeInfo,
         max_scroll_limit: usize,
@@ -523,6 +543,8 @@ impl GridHandler {
             track_content_length: false,
             full_grid_clear_behavior: FullGridClearBehavior::Scroll,
             find_dirty_rows_range: None,
+            content_revision: next_content_revision(),
+            content_identity: next_content_revision(),
         }
     }
 
@@ -661,6 +683,8 @@ impl GridHandler {
             track_content_length: false,
             full_grid_clear_behavior: FullGridClearBehavior::Scroll,
             find_dirty_rows_range: None,
+            content_revision: next_content_revision(),
+            content_identity: next_content_revision(),
         };
 
         // Scan the full grid for secrets.  This is less performant than
@@ -680,6 +704,7 @@ impl GridHandler {
     }
 
     pub fn grid_storage_mut(&mut self) -> &mut GridStorage {
+        self.mark_content_changed();
         &mut self.grid
     }
 
@@ -1870,6 +1895,7 @@ impl GridHandler {
     /// This is primarily used when a block is finished, to drop the excess rows that are not part
     /// of the output.
     pub fn truncate_to_cursor_rows(&mut self) {
+        self.mark_content_changed();
         // Normally, when using only grid storage, truncating rows after the
         // cursor naturally pulls some rows into the visible region of the
         // grid from grid storage scrollback.  When scrollback is stored in
@@ -1926,6 +1952,7 @@ impl GridHandler {
     /// makes sense to call in the context of a 1 row grid (we are cutting off columns in every
     /// row).
     pub fn truncate_to_cursor_cols(&mut self) {
+        self.mark_content_changed();
         self.grid.truncate_to_cursor_cols();
     }
 

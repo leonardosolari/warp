@@ -257,8 +257,32 @@ impl Input {
                 .with_border_fill(theme.outline()),
         };
 
+        let mut input_container = Container::new(stack.finish()).with_border(border);
+        if FeatureFlag::TerminalHighlighting.is_enabled()
+            && model.block_list().active_block().honor_ps1()
+        {
+            let runtime = crate::terminal::highlight::HighlightRuntime::as_ref(app);
+            if let Some(style) = runtime.header_style() {
+                let colors = model.colors();
+                if let Some(background) = style.background {
+                    input_container = input_container.with_background_color(
+                        crate::terminal::highlight::model::resolve_color(
+                            background, &colors, theme,
+                        ),
+                    );
+                }
+                if let Some(separator) = runtime.header_separator() {
+                    input_container =
+                        input_container.with_border(Border::top(1.).with_border_color(
+                            crate::terminal::highlight::model::resolve_color(
+                                separator, &colors, theme,
+                            ),
+                        ));
+                }
+            }
+        }
         let drop_target = DropTarget::new(
-            Container::new(stack.finish()).with_border(border).finish(),
+            input_container.finish(),
             InputDropTargetData::new(self.weak_view_handle.clone()),
         )
         .finish();

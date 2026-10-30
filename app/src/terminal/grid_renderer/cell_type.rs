@@ -26,6 +26,7 @@ pub(super) enum IsFocused {
 
 #[derive(Default, PartialEq)]
 pub(super) struct CellType {
+    pub(super) highlight: Option<crate::terminal::highlight::ResolvedHighlightStyle>,
     pub(super) is_find_match: Option<IsFocused>,
     pub(super) is_url: bool,
     pub(super) secret: Option<Secret>,
@@ -81,7 +82,10 @@ impl CellType {
 
     /// Used to check if a CellType is equivalent to the default (i.e. no matches, urls, secrets, etc).
     pub(super) fn is_default(&self) -> bool {
-        &Self::default() == self
+        self == &Self {
+            highlight: self.highlight,
+            ..Default::default()
+        }
     }
 
     pub(super) fn is_marked_text_char(&self) -> bool {

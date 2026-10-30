@@ -404,6 +404,38 @@ pub fn init_actions_from_parent_view<T: Action + Clone>(
         ));
     }
 
+    if FeatureFlag::TerminalHighlighting.is_enabled() {
+        toggle_binding_pairs.extend([
+            ToggleSettingActionPair::new(
+                "terminal text highlighting",
+                builder(SettingsAction::AppearancePageToggle(
+                    AppearancePageAction::ToggleTextHighlighting,
+                )),
+                context,
+                flags::TEXT_HIGHLIGHTING_CONTEXT_FLAG,
+            )
+            .with_enabled(|| FeatureFlag::TerminalHighlighting.is_enabled()),
+            ToggleSettingActionPair::new(
+                "prompt header colors",
+                builder(SettingsAction::AppearancePageToggle(
+                    AppearancePageAction::TogglePromptHeaderColors,
+                )),
+                context,
+                flags::PROMPT_HEADER_COLORS_CONTEXT_FLAG,
+            )
+            .with_enabled(|| FeatureFlag::TerminalHighlighting.is_enabled()),
+        ]);
+        app.register_fixed_bindings([FixedBinding::empty(
+            "Configure terminal highlighting and prompt header colors",
+            builder(SettingsAction::SelectAndRefresh(
+                SettingsSection::Appearance,
+            )),
+            context.clone(),
+        )
+        .with_group(bindings::BindingGroup::Settings.as_str())
+        .with_enabled(|| FeatureFlag::TerminalHighlighting.is_enabled())]);
+    }
+
     if FeatureFlag::Ligatures.is_enabled() {
         toggle_binding_pairs.push(ToggleSettingActionPair::new(
             "ligature rendering",
@@ -454,6 +486,8 @@ impl FontType {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum AppearancePageAction {
+    ToggleTextHighlighting,
+    TogglePromptHeaderColors,
     LineHeightEditorResetRatio,
     SetNewWindowsCustomColumns,
     SetNewWindowsCustomRows,
@@ -521,6 +555,9 @@ pub enum AppearancePageAction {
 }
 
 pub struct AppearanceSettingsPageView {
+    pub(super) highlight_error: Option<String>,
+    pub(super) highlight_rules_editor: Option<ViewHandle<super::highlighting::HighlightEditor>>,
+    pub(super) prompt_header_editor: Option<ViewHandle<super::highlighting::HighlightEditor>>,
     page: PageType<Self>,
     window_id: WindowId,
     local_only_icon_tooltip_states: RefCell<HashMap<String, MouseStateHandle>>,
@@ -574,6 +611,28 @@ impl TypedActionView for AppearanceSettingsPageView {
         use AppearancePageAction::*;
 
         match action {
+            ToggleTextHighlighting => {
+                self.highlight_error =
+                    crate::terminal::highlight::settings::HighlightSettings::handle(ctx)
+                        .update(ctx, |settings, ctx| {
+                            settings.enabled.toggle_and_save_value(ctx)
+                        })
+                        .err()
+                        .map(|error| error.to_string());
+                ctx.notify();
+            }
+            TogglePromptHeaderColors => {
+                self.highlight_error =
+                    crate::terminal::highlight::settings::HighlightSettings::handle(ctx)
+                        .update(ctx, |settings, ctx| {
+                            let mut header = settings.prompt_header.value().clone();
+                            header.enabled = !header.enabled;
+                            settings.prompt_header.set_value(header, ctx)
+                        })
+                        .err()
+                        .map(|error| error.to_string());
+                ctx.notify();
+            }
             LineHeightEditorResetRatio => self.reset_line_height_ratio(ctx),
             SetNewWindowsCustomColumns => self.update_new_windows_num_columns(true, ctx),
             SetNewWindowsCustomRows => self.update_new_windows_num_rows(true, ctx),
@@ -878,6 +937,10 @@ impl AppearanceSettingsPageView {
         ctx.subscribe_to_model(&TerminalSettings::handle(ctx), |_, _, _, ctx| {
             ctx.notify();
         });
+        ctx.subscribe_to_model(
+            &crate::terminal::highlight::settings::HighlightSettings::handle(ctx),
+            |_, _, _, ctx| ctx.notify(),
+        );
 
         ctx.subscribe_to_model(
             &FontSettings::handle(ctx),
@@ -1349,6 +1412,17 @@ impl AppearanceSettingsPageView {
             alt_screen_padding_editor,
             context_chips,
             ps1_grid_info: None,
+            highlight_error: None,
+            highlight_rules_editor: FeatureFlag::TerminalHighlighting.is_enabled().then(|| {
+                ctx.add_typed_action_view(|ctx| {
+                    super::highlighting::HighlightEditor::new(false, ctx)
+                })
+            }),
+            prompt_header_editor: FeatureFlag::TerminalHighlighting.is_enabled().then(|| {
+                ctx.add_typed_action_view(|ctx| {
+                    super::highlighting::HighlightEditor::new(true, ctx)
+                })
+            }),
         }
     }
 
@@ -1444,6 +1518,17 @@ impl AppearanceSettingsPageView {
         ];
 
         categories.push(Category::new("Input", category_widgets));
+        if FeatureFlag::TerminalHighlighting.is_enabled() {
+            categories.push(Category::new(
+                "Terminal highlighting",
+                vec![
+                    Box::new(super::highlighting::HighlightToggleWidget::default()),
+                    Box::new(super::highlighting::HighlightRulesWidget),
+                    Box::new(super::highlighting::PromptHeaderToggleWidget::default()),
+                    Box::new(super::highlighting::PromptHeaderWidget),
+                ],
+            ));
+        }
 
         categories.push(Category::new(
             "Panes",

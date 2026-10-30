@@ -1,4 +1,5 @@
 use pathfinder_geometry::vector::{Vector2F, vec2f};
+use warpui::SingletonEntity;
 use warpui::elements::{
     AfterLayoutContext, AppContext, Element, EventContext, LayoutContext, PaintContext, Point,
     SizeConstraint,
@@ -21,6 +22,7 @@ pub struct BlockGridElement {
     size: Vector2F,
     origin: Option<Point>,
     bounds: Option<RectF>,
+    prompt_header: bool,
 }
 
 impl BlockGridElement {
@@ -63,6 +65,7 @@ impl BlockGridElement {
             size,
             origin: None,
             bounds: None,
+            prompt_header: false,
         }
     }
 
@@ -70,6 +73,11 @@ impl BlockGridElement {
         self.block_grid_params
             .grid_render_params
             .use_ligature_rendering = true;
+        self
+    }
+
+    pub fn with_prompt_header(mut self) -> Self {
+        self.prompt_header = true;
         self
     }
 
@@ -90,7 +98,19 @@ impl Element for BlockGridElement {
         self.size
     }
 
-    fn after_layout(&mut self, _ctx: &mut AfterLayoutContext, _app: &AppContext) {}
+    fn after_layout(&mut self, _ctx: &mut AfterLayoutContext, app: &AppContext) {
+        if self.prompt_header && crate::features::FeatureFlag::TerminalHighlighting.is_enabled() {
+            let grid = self.block_grid.grid_handler();
+            crate::terminal::highlight::HighlightRuntime::as_ref(app).prepare_prompt_grid(
+                grid,
+                crate::terminal::model::index::Point::new(
+                    self.block_grid.len().saturating_sub(1),
+                    grid.columns().saturating_sub(1),
+                ),
+                self.block_grid.len(),
+            );
+        }
+    }
 
     fn paint(&mut self, origin: Vector2F, ctx: &mut PaintContext, app: &AppContext) {
         self.origin = Some(Point::from_vec2f(origin, ctx.scene.z_index()));

@@ -7,6 +7,8 @@
 use super::integration_tests;
 
 integration_tests! {
+    test_terminal_highlighting_settings_preview,
+    test_terminal_highlighting_rule_editor_saves_valid_drafts,
     test_add_many_sessions,
     test_child_pill_after_reopening_closed_parent_tab,
     test_ctrl_tab_session_switching,

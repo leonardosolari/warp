@@ -313,7 +313,8 @@ impl PromptRenderHelper {
             enforce_minimum_contrast,
             obfuscate_secrets,
             size_info,
-        );
+        )
+        .with_prompt_header();
         if should_use_ligature_rendering(app) {
             block_grid_element = block_grid_element.with_ligature_rendering();
         }

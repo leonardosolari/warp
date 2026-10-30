@@ -4121,6 +4121,10 @@ impl TerminalView {
 
         let ligature_handle = LigatureSettings::handle(ctx);
         ctx.subscribe_to_model(&ligature_handle, |_, _, _, ctx| ctx.notify());
+        ctx.subscribe_to_model(
+            &crate::terminal::highlight::settings::HighlightSettings::handle(ctx),
+            |_, _, _, ctx| ctx.notify(),
+        );
 
         let privacy_settings_handle = PrivacySettings::handle(ctx);
         ctx.subscribe_to_model(
